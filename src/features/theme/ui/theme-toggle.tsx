@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { ThemeName } from "@/features/theme/model/use-theme";
 import { MoonIcon, SunIcon } from "@/shared/ui/icons";
 
@@ -16,24 +17,24 @@ export function ThemeToggle({ theme, themeAnimating, onToggle }: ThemeToggleProp
       aria-label="theme toggle"
     >
       <span
-        className={[
+        className={clsx(
           "relative h-5 w-5 transition-transform duration-500",
-          themeAnimating ? "rotate-180" : "rotate-0",
-        ].join(" ")}
+          themeAnimating ? "rotate-180" : "rotate-0"
+        )}
       >
         <span
-          className={[
+          className={clsx(
             "absolute inset-0 flex items-center justify-center text-amber-500 transition-all duration-300",
-            theme === "light" ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-0 -rotate-90",
-          ].join(" ")}
+            theme === "light" ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-0 -rotate-90"
+          )}
         >
           <SunIcon />
         </span>
         <span
-          className={[
+          className={clsx(
             "absolute inset-0 flex items-center justify-center text-violet-400 transition-all duration-300",
-            theme === "dark" ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-0 rotate-90",
-          ].join(" ")}
+            theme === "dark" ? "opacity-100 scale-100 rotate-0" : "opacity-0 scale-0 rotate-90"
+          )}
         >
           <MoonIcon />
         </span>

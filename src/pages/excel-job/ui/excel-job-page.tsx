@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useEffect } from "react";
 import { useExcelJob } from "@/features/excel-job/model/use-excel-job";
 import { appToast } from "@/shared/lib/toast";
@@ -45,15 +46,19 @@ export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
           min={minMonth}
           max={maxMonth}
           onChange={(event) => setMonth(event.target.value)}
-          placeholder="2026-03"
-          className={[
+          className={clsx(
             "w-full rounded-xl border bg-slate-50 px-3 py-2 text-sm outline-none ring-sky-400 transition focus:ring-1 dark:bg-slate-900",
             validationError
               ? "border-rose-400 dark:border-rose-500"
-              : "border-slate-300 dark:border-slate-700",
-          ].join(" ")}
+              : "border-slate-300 dark:border-slate-700"
+          )}
         />
-        <p className={["mt-1 text-xs", validationError ? "text-rose-500" : "text-slate-500 dark:text-slate-400"].join(" ")}>
+        <p
+          className={clsx(
+            "mt-1 text-xs",
+            validationError ? "text-rose-500" : "text-slate-500 dark:text-slate-400"
+          )}
+        >
           {validationError ?? ``}
         </p>
       </label>

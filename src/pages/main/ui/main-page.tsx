@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { AppRoute } from "@/shared/lib/routing/hash-route";
 import {
   CalendarIcon,
@@ -48,12 +49,12 @@ export function MainPage({ onNavigate }: MainPageProps) {
             type="button"
             onClick={card.onClick}
             disabled={!card.enabled}
-            className={[
+            className={clsx(
               "relative rounded-2xl border p-3 shadow-sm transition dark:border-slate-700 dark:bg-slate-800",
               card.enabled
                 ? "border-slate-100 bg-white hover:-translate-y-0.5 hover:shadow-md"
-                : "border-slate-200 bg-slate-50 opacity-65 saturate-50 dark:bg-slate-800/70",
-            ].join(" ")}
+                : "border-slate-200 bg-slate-50 opacity-65 saturate-50 dark:bg-slate-800/70"
+            )}
           >
             {!card.enabled && (
               <span className="absolute right-1 top-1 flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-300/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
@@ -64,7 +65,10 @@ export function MainPage({ onNavigate }: MainPageProps) {
               </span>
             )}
             <div
-              className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${card.color} text-white`}
+              className={clsx(
+                "mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white",
+                card.color
+              )}
             >
               {card.icon}
             </div>
