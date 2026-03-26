@@ -12,7 +12,7 @@ export function ThemeToggle({ theme, themeAnimating, onToggle }: ThemeToggleProp
     <button
       type="button"
       onClick={onToggle}
-      className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white shadow-sm transition hover:scale-105 dark:border-slate-700 dark:bg-slate-800"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white shadow-sm transition hover:scale-105 dark:border-slate-700 dark:bg-slate-800"
       aria-label="theme toggle"
     >
       <span

@@ -1,5 +1,3 @@
-import type { ThemeName } from "@/features/theme/model/use-theme";
-import { ThemeToggle } from "@/features/theme/ui/theme-toggle";
 import type { AppRoute } from "@/shared/lib/routing/hash-route";
 import {
   CalendarIcon,
@@ -16,12 +14,9 @@ import {
 
 type MainPageProps = {
   onNavigate: (route: AppRoute) => void;
-  theme: ThemeName;
-  themeAnimating: boolean;
-  onToggleTheme: () => void;
 };
 
-export function MainPage({ onNavigate, theme, themeAnimating, onToggleTheme }: MainPageProps) {
+export function MainPage({ onNavigate }: MainPageProps) {
   const cards = [
     {
       label: "근태현황",
@@ -30,7 +25,7 @@ export function MainPage({ onNavigate, theme, themeAnimating, onToggleTheme }: M
       enabled: true,
       onClick: () => onNavigate("excel-job"),
     },
-    { label: "시간 관리", color: "from-sky-500 to-blue-500", icon: <ClockIcon />, enabled: false, },
+    { label: "시간 관리", color: "from-sky-500 to-blue-500", icon: <ClockIcon />, enabled: false },
     { label: "메모", color: "from-amber-500 to-orange-500", icon: <DocumentIcon />, enabled: false },
     { label: "일정 관리", color: "from-fuchsia-500 to-pink-500", icon: <CheckIcon />, enabled: false },
     { label: "템플릿", color: "from-rose-500 to-red-500", icon: <MailIcon />, enabled: false },
@@ -41,14 +36,9 @@ export function MainPage({ onNavigate, theme, themeAnimating, onToggleTheme }: M
   ];
 
   return (
-    <main className="relative">
-      <div className="mb-5 flex items-start justify-between">
-        <div className="mx-auto pt-2 text-center">
-          <h1 className="text-2xl font-extrabold tracking-tight">Office Assistant</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">필요한 기능을 선택하세요</p>
-        </div>
-
-        <ThemeToggle theme={theme} themeAnimating={themeAnimating} onToggle={onToggleTheme} />
+    <main>
+      <div className="mb-5 pt-2 text-center">
+        <h1 className="text-2xl font-extrabold tracking-tight">Office Assistant</h1>
       </div>
 
       <section className="grid grid-cols-3 gap-3">
