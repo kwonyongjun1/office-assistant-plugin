@@ -328,11 +328,11 @@ async function buildPngBlobFromRows(rows: string[][]): Promise<Blob | null> {
     y += h;
   }
 
-  const excludedBorderRowIndexes = new Set([0, 1, 2, 4]); // 1,2,3,5th rows (1-based)
+  const excludedBorderRowIndexes = new Set([0, 1, 2, 4]);
   const excludedRowBorderColor = "#D3D3D3";
-  const emphasizedRowIndex = 3; // 4th row (1-based)
-  const emphasizedColsEndEdgeIndex = 2; // 1st-2nd columns
-  const forcedBlackTopBorderEdgeIndexes = new Set([5, 6]); // top border of 6th, 7th rows (1-based)
+  const emphasizedRowIndex = 3;
+  const emphasizedColsEndEdgeIndex = 2;
+  const forcedBlackTopBorderEdgeIndexes = new Set([5, 6]);
 
   const drawBorderSegment = (
     startX: number,
@@ -349,7 +349,6 @@ async function buildPngBlobFromRows(rows: string[][]): Promise<Blob | null> {
     ctx.stroke();
   };
 
-  // Draw borders per segment so row-specific colors can be applied.
   for (let xEdgeIndex = 0; xEdgeIndex < xEdges.length; xEdgeIndex += 1) {
     const xEdge = xEdges[xEdgeIndex];
     const crispX = Math.round(xEdge) + 0.5;
