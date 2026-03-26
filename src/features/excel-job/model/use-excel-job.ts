@@ -16,7 +16,7 @@ const HEADER_BG = "#d9d9d9";
 const BODY_BG = "#ffffff";
 const FONT_FAMILY = "'Malgun Gothic', 'Noto Sans KR', sans-serif";
 const TITLE_FONT =
-  "700 20px 'Calibri', 'Malgun Gothic', 'Noto Sans KR', sans-serif";
+  "700 21px 'Calibri', 'Malgun Gothic', 'Noto Sans KR', sans-serif";
 const META_LABEL_FONT =
   "700 15px 'Calibri', 'Malgun Gothic', 'Noto Sans KR', sans-serif";
 const META_VALUE_FONT = "400 15px 'Malgun Gothic', 'Noto Sans KR', sans-serif";
@@ -138,7 +138,7 @@ function buildStyledHtmlTable(rows: string[][]): string {
       const rowKind = rowKinds[rowIndex];
 
       if (rowKind === "title") {
-        return `<tr><td colspan=\"5\" style=\"border:${CELL_BORDER_WIDTH}px solid ${CELL_BORDER_COLOR};background:${TITLE_BG};font:${TITLE_FONT};line-height:1;padding:2px 8px;text-align:left;vertical-align:middle;height:${TITLE_ROW_HEIGHT}px;\">${escapeHtml(
+        return `<tr><td colspan=\"5\" style=\"border:${CELL_BORDER_WIDTH}px solid ${CELL_BORDER_COLOR};background:${TITLE_BG};font:${TITLE_FONT};line-height:1;padding:1px 7px;text-align:left;vertical-align:middle;height:${TITLE_ROW_HEIGHT}px;\">${escapeHtml(
           row[0] ?? ""
         )}</td></tr>`;
       }
@@ -328,12 +328,30 @@ async function buildPngBlobFromRows(rows: string[][]): Promise<Blob | null> {
     y += h;
   }
 
-  // Draw borders once to avoid double-thick shared edges.
-  ctx.strokeStyle = CELL_BORDER_COLOR;
-  ctx.lineWidth = CELL_BORDER_WIDTH;
-  ctx.beginPath();
+  const excludedBorderRowIndexes = new Set([0, 1, 2, 4]); // 1,2,3,5th rows (1-based)
+  const excludedRowBorderColor = "#D3D3D3";
+  const emphasizedRowIndex = 3; // 4th row (1-based)
+  const emphasizedColsEndEdgeIndex = 2; // 1st-2nd columns
+  const forcedBlackTopBorderEdgeIndexes = new Set([5, 6]); // top border of 6th, 7th rows (1-based)
 
-  for (const xEdge of xEdges) {
+  const drawBorderSegment = (
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    color: string
+  ) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = CELL_BORDER_WIDTH;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+  };
+
+  // Draw borders per segment so row-specific colors can be applied.
+  for (let xEdgeIndex = 0; xEdgeIndex < xEdges.length; xEdgeIndex += 1) {
+    const xEdge = xEdges[xEdgeIndex];
     const crispX = Math.round(xEdge) + 0.5;
     for (let rowIndex = 0; rowIndex < rowKinds.length; rowIndex += 1) {
       const rowKind = rowKinds[rowIndex];
@@ -354,18 +372,82 @@ async function buildPngBlobFromRows(rows: string[][]): Promise<Blob | null> {
         continue;
       }
 
-      ctx.moveTo(crispX, Math.round(startY) + 0.5);
-      ctx.lineTo(crispX, Math.round(endY) + 0.5);
+      let color = excludedBorderRowIndexes.has(rowIndex)
+        ? excludedRowBorderColor
+        : CELL_BORDER_COLOR;
+      if (
+        rowIndex === emphasizedRowIndex &&
+        xEdgeIndex >= emphasizedColsEndEdgeIndex
+      ) {
+        color = excludedRowBorderColor;
+      }
+      if (
+        rowIndex === emphasizedRowIndex &&
+        xEdgeIndex === emphasizedColsEndEdgeIndex
+      ) {
+        color = CELL_BORDER_COLOR;
+      }
+
+      drawBorderSegment(
+        crispX,
+        Math.round(startY) + 0.5,
+        crispX,
+        Math.round(endY) + 0.5,
+        color
+      );
     }
   }
 
-  for (const yEdge of yEdges) {
+  for (let edgeIndex = 0; edgeIndex < yEdges.length; edgeIndex += 1) {
+    const yEdge = yEdges[edgeIndex];
     const crispY = Math.round(yEdge) + 0.5;
-    ctx.moveTo(0, crispY);
-    ctx.lineTo(xEdges[xEdges.length - 1], crispY);
-  }
+    const touchesExcludedRow =
+      excludedBorderRowIndexes.has(edgeIndex - 1) ||
+      excludedBorderRowIndexes.has(edgeIndex);
+    const defaultColor = touchesExcludedRow
+      ? excludedRowBorderColor
+      : CELL_BORDER_COLOR;
 
-  ctx.stroke();
+    if (forcedBlackTopBorderEdgeIndexes.has(edgeIndex)) {
+      drawBorderSegment(
+        0,
+        crispY,
+        xEdges[xEdges.length - 1],
+        crispY,
+        CELL_BORDER_COLOR
+      );
+      continue;
+    }
+
+    if (
+      edgeIndex === emphasizedRowIndex ||
+      edgeIndex === emphasizedRowIndex + 1
+    ) {
+      drawBorderSegment(
+        0,
+        crispY,
+        xEdges[emphasizedColsEndEdgeIndex],
+        crispY,
+        CELL_BORDER_COLOR
+      );
+      drawBorderSegment(
+        xEdges[emphasizedColsEndEdgeIndex],
+        crispY,
+        xEdges[xEdges.length - 1],
+        crispY,
+        defaultColor
+      );
+      continue;
+    }
+
+    drawBorderSegment(
+      0,
+      crispY,
+      xEdges[xEdges.length - 1],
+      crispY,
+      defaultColor
+    );
+  }
 
   return await new Promise<Blob | null>((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/png");
