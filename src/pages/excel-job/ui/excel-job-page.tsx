@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useExcelJob } from "@/features/excel-job/model/use-excel-job";
+import { appToast } from "@/shared/lib/toast";
 
 type ExcelJobPageProps = {
   onBack: () => void;
@@ -6,6 +8,22 @@ type ExcelJobPageProps = {
 
 export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
   const { month, setMonth, isLoading, result, canSubmit, validationError, run } = useExcelJob();
+
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+
+    if (result.ok) {
+      if (result.copiedText !== undefined) {
+        appToast.success("복사가 완료되었습니다.");
+      } else {
+        appToast.success("다운로드가 완료되었습니다.");
+      }
+      return;
+    }
+    appToast.error("작업에 실패했습니다.");
+  }, [result]);
 
   return (
     <main className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800">
