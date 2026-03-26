@@ -18,4 +18,23 @@ export type ProcessExcelResponse =
   | {
       ok: false;
       error: string;
+      status?: number;
+      code?: string;
     };
+
+export type CheckSessionRequest = {
+  type: "CHECK_SESSION";
+};
+
+export type CheckSessionResponse =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      error: string;
+      status?: number;
+      code?: string;
+    };
+
+export type ExtensionRequest = ProcessExcelRequest | CheckSessionRequest;

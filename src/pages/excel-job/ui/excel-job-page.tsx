@@ -20,9 +20,7 @@ export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
       } else {
         appToast.success("다운로드가 완료되었습니다.");
       }
-      return;
     }
-    appToast.error("작업에 실패했습니다.");
   }, [result]);
 
   return (

@@ -1,5 +1,8 @@
 import * as XLSX from "xlsx";
+import { requestBinaryApi, requestJsonApi } from "@/shared/lib/api/daou-api-client";
 import type {
+  CheckSessionResponse,
+  ExtensionRequest,
   ProcessExcelRequest,
   ProcessExcelResponse,
 } from "@/shared/types/excel-job";
@@ -16,6 +19,7 @@ type FetchResult =
       ok: false;
       error: string;
       status?: number;
+      code?: string;
     };
 
 const EXCEL_CONTENT_TYPE =
@@ -23,10 +27,26 @@ const EXCEL_CONTENT_TYPE =
 
 const EXCEL_API_URL =
   "https://digicaps.daouoffice.com/api/attend/normal/work/record/excel/download";
+const SESSION_API_URL = "https://digicaps.daouoffice.com/eacc/api/ess/user/getSession";
 
 export function registerExcelJobListener() {
   chrome.runtime.onMessage.addListener(
-    (message: ProcessExcelRequest, _, sendResponse) => {
+    (message: ExtensionRequest, _, sendResponse) => {
+      if (message.type === "CHECK_SESSION") {
+        handleCheckSession()
+          .then((response) => sendResponse(response))
+          .catch((error) =>
+            sendResponse({
+              ok: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred.",
+            } satisfies CheckSessionResponse)
+          );
+        return true;
+      }
+
       if (
         message.type !== "DOWNLOAD_MONTHLY_EXCEL" &&
         message.type !== "COPY_MONTHLY_EXCEL_RANGE"
@@ -62,6 +82,8 @@ async function handleProcess(
     return {
       ok: false,
       error: fetched.error,
+      status: fetched.status,
+      code: fetched.code,
     };
   }
 
@@ -93,6 +115,19 @@ async function handleProcess(
   };
 }
 
+async function handleCheckSession(): Promise<CheckSessionResponse> {
+  const result = await requestJsonApi<unknown>(SESSION_API_URL, "POST");
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: result.error,
+      status: result.status,
+      code: result.code,
+    };
+  }
+  return { ok: true };
+}
+
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function buildApiUrl(month: string): string {
@@ -113,136 +148,18 @@ async function fetchExcelWithSession(
   apiUrl: string,
   month: string
 ): Promise<FetchResult> {
-  const direct = await fetchByBackground(apiUrl, month);
-  if (direct.ok) {
-    return direct;
+  const result = await requestBinaryApi(apiUrl);
+  if (!result.ok) {
+    return result;
   }
 
-  if (direct.status !== 401 && direct.status !== 403) {
-    return direct;
-  }
-
-  return fetchByPageContext(apiUrl, month);
-}
-
-async function fetchByBackground(
-  apiUrl: string,
-  month: string
-): Promise<FetchResult> {
-  let response: Response;
-  try {
-    response = await fetch(apiUrl, {
-      method: "GET",
-      credentials: "include",
-    });
-  } catch {
-    return {
-      ok: false,
-      error: "Failed to call API from extension background.",
-    };
-  }
-
-  if (!response.ok) {
-    return {
-      ok: false,
-      status: response.status,
-      error: `Background request failed (${response.status})`,
-    };
-  }
-
-  const buffer = new Uint8Array(await response.arrayBuffer());
   return {
     ok: true,
-    data: buffer,
-    contentType: response.headers.get("content-type") ?? EXCEL_CONTENT_TYPE,
-    fileName: resolveDownloadFileName(
-      response.headers.get("content-disposition"),
-      month
-    ),
-    fetchMode: "background",
-  };
-}
-
-async function fetchByPageContext(
-  apiUrl: string,
-  month: string
-): Promise<FetchResult> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) {
-    return {
-      ok: false,
-      error:
-        "No active tab found. Open a logged-in company page tab and retry.",
-    };
-  }
-
-  const injected = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    world: "MAIN",
-    args: [apiUrl],
-    func: async (url) => {
-      try {
-        const response = await fetch(url, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          return {
-            ok: false,
-            status: response.status,
-            error: `Page request failed (${response.status})`,
-          } as const;
-        }
-
-        const buffer = new Uint8Array(await response.arrayBuffer());
-        let binary = "";
-        const chunkSize = 0x8000;
-        for (let i = 0; i < buffer.length; i += chunkSize) {
-          binary += String.fromCharCode(...buffer.subarray(i, i + chunkSize));
-        }
-
-        return {
-          ok: true,
-          base64: btoa(binary),
-          contentType: response.headers.get("content-type") ?? "",
-          contentDisposition: response.headers.get("content-disposition"),
-        } as const;
-      } catch {
-        return {
-          ok: false,
-          error: "Network error while requesting from page context.",
-        } as const;
-      }
-    },
-  });
-
-  const result = injected[0]?.result;
-  if (!result?.ok) {
-    return {
-      ok: false,
-      error: result?.error ?? "Page-context request failed.",
-      status: result?.status,
-    };
-  }
-
-  const data = base64ToBytes(result.base64);
-  return {
-    ok: true,
-    data,
+    data: result.data,
     contentType: result.contentType || EXCEL_CONTENT_TYPE,
-    fileName: resolveDownloadFileName(result.contentDisposition ?? null, month),
-    fetchMode: "page",
+    fileName: resolveDownloadFileName(result.contentDisposition, month),
+    fetchMode: result.fetchMode,
   };
-}
-
-function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
 }
 
 function resolveDownloadFileName(

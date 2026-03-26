@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { sendRuntimeMessage } from "@/shared/lib/chrome/send-runtime-message";
 import type {
   ProcessExcelRequest,
   ProcessExcelResponse,
@@ -59,9 +60,10 @@ export function useExcelJob() {
         payload: { month },
       };
 
-      const response = (await chrome.runtime.sendMessage(
-        payload
-      )) as ProcessExcelResponse;
+      const response = await sendRuntimeMessage<
+        ProcessExcelRequest,
+        ProcessExcelResponse
+      >(payload);
       if (!response.ok) {
         setResult(response);
         return;
