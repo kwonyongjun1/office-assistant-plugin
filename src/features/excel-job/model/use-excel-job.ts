@@ -8,6 +8,7 @@ import type {
 const DEFAULT_MONTH = new Date().toISOString().slice(0, 7);
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DATE_ROW_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MIN_MONTH = "2000-04";
 
 const TABLE_COL_WIDTHS = [122, 120, 120, 120, 120];
 const CELL_BORDER_COLOR = "#000000";
@@ -28,20 +29,33 @@ const SUMMARY_FONT = "700 15px 'Malgun Gothic', 'Noto Sans KR', sans-serif";
 const TITLE_ROW_HEIGHT = 44;
 const ROW_HEIGHT = 22;
 
+function getCurrentKstMonth(): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  return `${year}-${month}`;
+}
+
 export function useExcelJob() {
+  const maxMonth = getCurrentKstMonth();
   const [month, setMonth] = useState(DEFAULT_MONTH);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ProcessExcelResponse | null>(null);
 
   const validationError = useMemo(() => {
-    if (!month) {
-      return "Month is required.";
+    if (!month || !MONTH_PATTERN.test(month)) {
+      return "YYYY년 MM월 형식으로 입력해주세요. (e.g. 2026년 03월)";
     }
-    if (!MONTH_PATTERN.test(month)) {
-      return "Invalid format. Use YYYY-MM (e.g. 2026-03).";
+    if (month < MIN_MONTH || month > maxMonth) {
+      return `${MIN_MONTH}부터 ${maxMonth}까지 선택할 수 있습니다.`;
     }
     return null;
-  }, [month]);
+  }, [maxMonth, month]);
 
   const canSubmit = validationError === null;
 
@@ -91,6 +105,8 @@ export function useExcelJob() {
   return {
     month,
     setMonth,
+    minMonth: MIN_MONTH,
+    maxMonth,
     isLoading,
     result,
     canSubmit,

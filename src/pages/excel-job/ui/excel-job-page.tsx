@@ -7,7 +7,8 @@ type ExcelJobPageProps = {
 };
 
 export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
-  const { month, setMonth, isLoading, result, canSubmit, validationError, run } = useExcelJob();
+  const { month, setMonth, minMonth, maxMonth, isLoading, result, canSubmit, validationError, run } =
+    useExcelJob();
 
   useEffect(() => {
     if (!result) {
@@ -33,7 +34,7 @@ export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
         >
           Back
         </button>
-        <h2 className="text-sm font-bold">근태현황</h2>
+        <h2 className="text-sm font-bold">월간 근태현황</h2>
       </div>
 
       <label className="block">
@@ -41,6 +42,8 @@ export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
         <input
           type="month"
           value={month}
+          min={minMonth}
+          max={maxMonth}
           onChange={(event) => setMonth(event.target.value)}
           placeholder="2026-03"
           className={[
@@ -51,7 +54,7 @@ export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
           ].join(" ")}
         />
         <p className={["mt-1 text-xs", validationError ? "text-rose-500" : "text-slate-500 dark:text-slate-400"].join(" ")}>
-          {validationError ?? "Format: YYYY-MM. API will send YYYY-MM-01."}
+          {validationError ?? ``}
         </p>
       </label>
 
@@ -73,18 +76,6 @@ export function ExcelJobPage({ onBack }: ExcelJobPageProps) {
           {isLoading ? "Processing..." : "복사하기"}
         </button>
       </div>
-
-      <section className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-900">
-        {!result && <p className="text-slate-500 dark:text-slate-400">No run yet.</p>}
-        {result?.ok && (
-          <div className="space-y-1 text-emerald-600 dark:text-emerald-300">
-            <p>Downloaded file: {result.fileName}</p>
-            <p>Fetch mode: {result.fetchMode}</p>
-            {result.copiedText !== undefined && <p>Clipboard updated.</p>}
-          </div>
-        )}
-        {result && !result.ok && <p className="text-rose-500">Error: {result.error}</p>}
-      </section>
     </main>
   );
 }
