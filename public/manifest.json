@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Monthly Excel Helper",
+  "description": "Use logged-in session to download monthly Excel and copy a selected range.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "Monthly Excel Helper",
+    "default_popup": "index.html"
+  },
+  "permissions": ["downloads", "scripting", "activeTab", "tabs", "storage"],
+  "host_permissions": ["https://*/*", "http://*/*"],
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  }
+}
