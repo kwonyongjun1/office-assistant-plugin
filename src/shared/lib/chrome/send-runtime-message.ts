@@ -14,11 +14,11 @@ type RuntimeResponse =
       code?: string;
     };
 
-export async function sendRuntimeMessage<TRequest, TResponse extends RuntimeResponse>(
-  message: TRequest
-): Promise<TResponse> {
+export async function sendRuntimeMessage<
+  TRequest,
+  TResponse extends RuntimeResponse
+>(message: TRequest): Promise<TResponse> {
   const response = (await chrome.runtime.sendMessage(message)) as TResponse;
-
   if (!response.ok) {
     if (response.code === INVALID_TOKEN_CODE) {
       appToast.error(PORTAL_LOGIN_REQUIRED_TOAST);

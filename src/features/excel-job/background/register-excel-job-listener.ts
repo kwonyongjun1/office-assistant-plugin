@@ -1,5 +1,8 @@
 import * as XLSX from "xlsx";
-import { requestBinaryApi, requestJsonApi } from "@/shared/lib/api/daou-api-client";
+import {
+  requestBinaryApi,
+  requestJsonApi,
+} from "@/shared/lib/api/daou-api-client";
 import type {
   CheckSessionResponse,
   ExtensionRequest,
@@ -27,7 +30,8 @@ const EXCEL_CONTENT_TYPE =
 
 const EXCEL_API_URL =
   "https://digicaps.daouoffice.com/api/attend/normal/work/record/excel/download";
-const SESSION_API_URL = "https://digicaps.daouoffice.com/eacc/api/ess/user/getSession";
+const SESSION_API_URL =
+  "https://digicaps.daouoffice.com/eacc/api/ess/user/getSession";
 
 export function registerExcelJobListener() {
   chrome.runtime.onMessage.addListener(
