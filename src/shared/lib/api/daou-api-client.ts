@@ -1,4 +1,7 @@
-import { INVALID_TOKEN_CODE, INVALID_TOKEN_MESSAGE } from "@/shared/constants/api-errors";
+import {
+  INVALID_TOKEN_CODE,
+  INVALID_TOKEN_MESSAGE,
+} from "@/shared/constants/api-errors";
 
 type ApiError = {
   ok: false;
@@ -29,40 +32,27 @@ export type JsonApiResult<T> =
 type HttpMethod = "GET" | "POST";
 
 export async function requestBinaryApi(url: string): Promise<BinaryApiResult> {
-  const background = await requestBinaryByBackground(url);
-  if (background.ok) {
-    return background;
-  }
-
-  if (background.status !== 401 && background.status !== 403) {
-    return background;
-  }
-
-  return requestBinaryByPage(url);
+  return await requestBinaryByBackground(url);
 }
 
 export async function requestJsonApi<T>(
   url: string,
   method: HttpMethod = "GET"
 ): Promise<JsonApiResult<T>> {
-  const background = await requestJsonByBackground<T>(url, method);
-  if (background.ok) {
-    return background;
-  }
-
-  if (background.status !== 401 && background.status !== 403) {
-    return background;
-  }
-
-  return requestJsonByPage<T>(url, method);
+  return await requestJsonByBackground<T>(url, method);
 }
 
-async function requestBinaryByBackground(url: string): Promise<BinaryApiResult> {
+async function requestBinaryByBackground(
+  url: string
+): Promise<BinaryApiResult> {
   let response: Response;
   try {
     response = await fetch(url, { method: "GET", credentials: "include" });
   } catch {
-    return { ok: false, error: "Failed to call API from extension background." };
+    return {
+      ok: false,
+      error: "Failed to call API from extension background.",
+    };
   }
 
   if (!response.ok) {
@@ -99,105 +89,6 @@ async function requestBinaryByBackground(url: string): Promise<BinaryApiResult> 
   };
 }
 
-async function requestBinaryByPage(url: string): Promise<BinaryApiResult> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) {
-    return {
-      ok: false,
-      error: "No active tab found. Open a logged-in company page tab and retry.",
-    };
-  }
-
-  const injected = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    world: "MAIN",
-    args: [url],
-    func: async (apiUrl) => {
-      try {
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          credentials: "include",
-        });
-        const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
-        const isJson = contentType.includes("application/json");
-
-        if (!response.ok) {
-          const body = isJson ? await response.json().catch(() => null) : null;
-          if (body?.code === "ROUTE-0004" && body?.message === "Invalid token") {
-            return {
-              ok: false,
-              status: response.status,
-              code: "ROUTE-0004",
-              error: "Invalid token",
-            } as const;
-          }
-
-          return {
-            ok: false,
-            status: response.status,
-            error: `Page request failed (${response.status})`,
-          } as const;
-        }
-
-        if (isJson) {
-          const body = await response.json().catch(() => null);
-          if (body?.code === "ROUTE-0004" && body?.message === "Invalid token") {
-            return {
-              ok: false,
-              status: response.status,
-              code: "ROUTE-0004",
-              error: "Invalid token",
-            } as const;
-          }
-
-          return {
-            ok: false,
-            status: response.status,
-            error: "Unexpected JSON response from binary API.",
-          } as const;
-        }
-
-        const bytes = new Uint8Array(await response.arrayBuffer());
-        let binary = "";
-        const chunkSize = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-          binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-        }
-
-        return {
-          ok: true,
-          base64: btoa(binary),
-          contentType,
-          contentDisposition: response.headers.get("content-disposition"),
-        } as const;
-      } catch {
-        return {
-          ok: false,
-          error: "Network error while requesting from page context.",
-        } as const;
-      }
-    },
-  });
-
-  const result = injected[0]?.result;
-  if (!result?.ok) {
-    return {
-      ok: false,
-      error: result?.error ?? "Page-context request failed.",
-      status: result?.status,
-      code: result?.code,
-    };
-  }
-
-  return {
-    ok: true,
-    data: base64ToBytes(result.base64),
-    contentType: result.contentType || "",
-    contentDisposition: result.contentDisposition ?? null,
-    fetchMode: "page",
-  };
-}
-
 async function requestJsonByBackground<T>(
   url: string,
   method: HttpMethod
@@ -206,7 +97,10 @@ async function requestJsonByBackground<T>(
   try {
     response = await fetch(url, { method, credentials: "include" });
   } catch {
-    return { ok: false, error: "Failed to call API from extension background." };
+    return {
+      ok: false,
+      error: "Failed to call API from extension background.",
+    };
   }
 
   if (!response.ok) {
@@ -244,79 +138,6 @@ async function requestJsonByBackground<T>(
       error: "API returned invalid JSON.",
     };
   }
-}
-
-async function requestJsonByPage<T>(
-  url: string,
-  method: HttpMethod
-): Promise<JsonApiResult<T>> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) {
-    return {
-      ok: false,
-      error: "No active tab found for API request.",
-    };
-  }
-
-  const injected = await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    world: "MAIN",
-    args: [url, method],
-    func: async (apiUrl, apiMethod) => {
-      try {
-        const response = await fetch(apiUrl, {
-          method: apiMethod,
-          credentials: "include",
-        });
-        const body = await response.json().catch(() => null);
-
-        if (body?.code === "ROUTE-0004" && body?.message === "Invalid token") {
-          return {
-            ok: false,
-            status: response.status,
-            code: "ROUTE-0004",
-            error: "Invalid token",
-          } as const;
-        }
-
-        if (!response.ok) {
-          return {
-            ok: false,
-            status: response.status,
-            error: `Page request failed (${response.status})`,
-          } as const;
-        }
-
-        return {
-          ok: true,
-          body,
-          status: response.status,
-        } as const;
-      } catch {
-        return {
-          ok: false,
-          error: "Network error while requesting from page context.",
-        } as const;
-      }
-    },
-  });
-
-  const result = injected[0]?.result;
-  if (!result?.ok) {
-    return {
-      ok: false,
-      error: result?.error ?? "Page-context request failed.",
-      status: result?.status,
-      code: result?.code,
-    };
-  }
-
-  return {
-    ok: true,
-    body: result.body as T,
-    status: result.status,
-    fetchMode: "page",
-  };
 }
 
 async function parseInvalidTokenFromResponse(
