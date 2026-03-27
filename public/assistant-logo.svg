@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Office Assistant">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4d93ff" />
+      <stop offset="1" stop-color="#2454d8" />
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="100" height="100" rx="26" fill="url(#bg)" />
+  <path
+    d="M69 28 L47 66 H63 L56 100 L82 57 H67 Z"
+    fill="#ffffff"
+  />
+</svg>

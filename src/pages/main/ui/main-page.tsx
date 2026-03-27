@@ -39,6 +39,11 @@ export function MainPage({ onNavigate }: MainPageProps) {
   return (
     <main>
       <div className="mb-5 pt-2 text-center">
+        <img
+          src="/assistant-logo.svg"
+          alt="Office Assistant"
+          className="mx-auto mb-3 h-14 w-14 rounded-2xl shadow-sm"
+        />
         <h1 className="text-2xl font-extrabold tracking-tight">Office Assistant</h1>
       </div>
 
